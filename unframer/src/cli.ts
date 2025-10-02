@@ -48,6 +48,9 @@ cli.command('[projectId]', 'Run unframer with optional project ID')
         default: false,
     })
     .action(async function main(projectId, options) {
+        console.log('DEBUG: CLI started')
+        console.log('DEBUG: projectId:', projectId)
+        console.log('DEBUG: options:', options)
         const external_ = options.external
         const allExternal = external_ === true
         const externalPackages: string[] = Array.isArray(external_)
@@ -63,7 +66,9 @@ cli.command('[projectId]', 'Run unframer with optional project ID')
             const controller = new AbortController()
             const signal = controller.signal
             const watch = options.watch
+            console.log('DEBUG: About to check projectId:', projectId)
             if (projectId) {
+                console.log('DEBUG: Calling configFromFetch...')
                 const { config, cwd, websiteUrl } = await configFromFetch({
                     allExternal,
                     externalPackages,
@@ -376,6 +381,14 @@ export async function configFromFetch({
     const { data, error } = await client.api.plugins.reactExportPlugin
         .project({ projectId })
         .get()
+
+    // DEBUG: Log the raw response
+    console.log('DEBUG: Raw response from spiceflow client:')
+    console.log('  data:', data)
+    console.log('  data type:', typeof data)
+    console.log('  data.components:', data?.components)
+    console.log('  error:', error)
+
     if (error) {
         spinner.error('Error fetching project data:')
         console.error(error)
