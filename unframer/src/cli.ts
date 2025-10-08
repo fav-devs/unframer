@@ -1,4 +1,4 @@
-import { setMaxListeners } from 'events'
+﻿import { setMaxListeners } from 'events'
 import { fetch } from 'undici'
 import './sentry.js'
 
@@ -502,3 +502,7 @@ function findUp(
 
     return null
 }
+
+
+// Ensure CLI runs
+cli.parse()
