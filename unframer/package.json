@@ -1,9 +1,9 @@
 {
-    "name": "unframer",
-    "version": "3.2.9",
-    "description": "Import Framer components directly in your React app, type safe and customizable",
+    "name": "@fav-devs/unframer",
+    "version": "3.2.10",
+    "description": "Import Framer components directly in your React app, type safe and customizable (fork with debug logging)",
     "sideEffects": false,
-    "repository": "https://github.com/remorses/unframer",
+    "repository": "https://github.com/fav-devs/unframer",
     "scripts": {
         "build": "rm -rf dist && pnpm concurrently \"pnpm tsc -m esnext --moduleResolution node --outDir esm\" \"pnpm tsc\" && echo copying && cp ../README.md ./README.md && cp ./src/framer.d.ts ./dist/framer.d.ts && cp ./src/framer.d.ts ./esm/framer.d.ts",
         "test": "vitest",
@@ -44,9 +44,9 @@
         },
         "./package.json": "./package.json"
     },
-    "keywords": [],
-    "author": "Tommaso De Rossi, morse <beats.by.morse@gmail.com>",
-    "license": "",
+    "keywords": ["framer", "react", "components", "export", "cli"],
+    "author": "fav-devs (fork of unframer by Tommaso De Rossi)",
+    "license": "MIT",
     "peerDependencies": {
         "react": "*",
         "react-dom": "*"
