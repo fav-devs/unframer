@@ -44,7 +44,7 @@ const RUNTIME_PACKAGE_NAME = process.env.REFRAME_RUNTIME_PKG || 'unframer'
 const GENERATED_BANNER_BRAND = process.env.REFRAME_BRAND || 'Unframer'
 const GENERATED_BANNER_ENABLE = String(process.env.REFRAME_EMIT_BANNER ?? 'true').toLowerCase() !== 'false'
 const SUPPRESS_INSTALL = String(process.env.REFRAME_SUPPRESS_INSTALL ?? 'false').toLowerCase() === 'true'
-const SCRUB_OUTPUT = String(process.env.REFRAME_SCRUB_OUTPUT ?? 'true').toLowerCase() !== 'false'
+ DEFAULT_CLASS_PREFIX = process.env.REFRAME_CLASS_PREFIX || 'unframer'
 
     resolveRedirect,
 } from './esbuild'
@@ -264,14 +264,14 @@ export async function bundle({
                                 contents: /** js **/ `
                                 'use client'
                                 import { Fragment } from 'react'
-                                import { ContextProviders } from 'unframer'
-                                import Component from '${await resolveRedirect({
+                                
+                                import { ContextProviders } from ''\r\n                                import Component from '${await resolveRedirect({
                                     url,
                                     signal,
                                 })}'
-                                import { WithFramerBreakpoints, setUnframerPrefix } from 'unframer'
-                                import { routes } from '${routesImportPath}'
-                                setUnframerPrefix(${JSON.stringify((config.classPrefix && config.classPrefix.trim()) || 'unframer')})
+                                
+                                import { WithFramerBreakpoints, setUnframerPrefix } from ''\r\n                                import { routes } from '${routesImportPath}'
+                                setUnframerPrefix(${JSON.stringify((config.classPrefix && config.classPrefix.trim()) || DEFAULT_CLASS_PREFIX)})
                                 const locales = ${
                                     JSON.stringify(config.locales) || '[]'
                                 }
@@ -1600,3 +1600,9 @@ export function isVersionGreater(versionA: string, versionB: string): boolean {
         return true
     }
 }
+
+
+
+
+
+
