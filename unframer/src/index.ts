@@ -10,6 +10,7 @@ export {
     ContextProviders,
     AdaptedLink,
     UnframerProvider,
+    setUnframerPrefix,
     // withCSS,
 } from './react.js'
 

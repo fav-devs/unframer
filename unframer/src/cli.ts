@@ -47,6 +47,11 @@ cli.command('[projectId]', 'Run unframer with optional project ID')
     .option('--metafile', 'Generate meta.json file with build metadata', {
         default: false,
     })
+    .option(
+        '--classPrefix <prefix>',
+        'Rewrite Framer CSS class prefix (e.g. framer- -> <prefix>-) in generated code and CSS',
+        { default: undefined as any },
+    )
     .action(async function main(projectId, options) {
         console.log('DEBUG: CLI started')
         console.log('DEBUG: projectId:', projectId)
@@ -80,6 +85,7 @@ cli.command('[projectId]', 'Run unframer with optional project ID')
                     config: {
                         jsx,
                         ...config,
+                        classPrefix: options.classPrefix,
                     },
                     watch,
                     cwd,
@@ -146,6 +152,9 @@ cli.command('[projectId]', 'Run unframer with optional project ID')
             const config = JSON.parse(configContentWithoutComments)
             if (outDir !== defaultOutDir) {
                 config.outDir = outDir
+            }
+            if (options.classPrefix) {
+                config.classPrefix = options.classPrefix
             }
 
             setMaxListeners(0, controller.signal)
@@ -348,6 +357,7 @@ export type Config = {
     outDir?: string
     componentInstancesInIndexPage: ComponentInstanceInPage[]
     pageBackgroundColor?: string
+    classPrefix?: string
     // [key: string]: any
 }
 

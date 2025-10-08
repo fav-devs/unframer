@@ -98,7 +98,7 @@ export async function bundle({
     signal?: AbortSignal
     metafile?: boolean
 }) {
-    const { components, breakpoints, tokens, framerWebPages } = config
+    const { components, breakpoints, tokens, framerWebPages, classPrefix } = config
     out ||= path.resolve(process.cwd(), 'example')
     out = path.resolve(out)
     try {
@@ -261,8 +261,9 @@ export async function bundle({
                                     url,
                                     signal,
                                 })}'
-                                import { WithFramerBreakpoints } from 'unframer'
+                                import { WithFramerBreakpoints, setUnframerPrefix } from 'unframer'
                                 import { routes } from '${routesImportPath}'
+                                setUnframerPrefix(${JSON.stringify((config.classPrefix && config.classPrefix.trim()) || 'unframer')})
                                 const locales = ${
                                     JSON.stringify(config.locales) || '[]'
                                 }
@@ -391,7 +392,11 @@ export async function bundle({
             const paths = getFilePaths(file.path, out)
             const prefix =
                 `// @ts-nocheck\n` + `/* eslint-disable */\n` + doNotEditComment
-            const codeJs = prefix + file.text
+            let jsBody = file.text
+            if (classPrefix && classPrefix !== 'framer') {
+                jsBody = jsBody.split('framer-').join(classPrefix + '-')
+            }
+            const codeJs = prefix + jsBody
 
             logger.log(`writing temp JS`, path.relative(out, paths.tempJsPath))
             await fs.promises.mkdir(path.dirname(paths.tempJsPath), {
@@ -521,13 +526,29 @@ export async function bundle({
             }
         })
 
+        // Prepare CSS imports with optional class prefix rewrite for Framer classes
+        let framerCssImport = '@import "unframer/styles/framer.css";\n\n'
+        if (classPrefix && classPrefix !== 'framer') {
+            try {
+                const framerCssPath = path.resolve(__dirname, 'styles', 'framer.css')
+                const framerCss = await fs.promises.readFile(framerCssPath, 'utf-8')
+                const prefixedCss = framerCss.split('framer-').join(classPrefix + '-')
+                const prefixedOutPath = path.resolve(out, 'framer-prefixed.css')
+                await fs.promises.writeFile(prefixedOutPath, prefixedCss, 'utf-8')
+                framerCssImport = '@import "./framer-prefixed.css";\n\n'
+            } catch (e) {
+                // Fallback to default import if anything goes wrong
+                framerCssImport = '@import "unframer/styles/framer.css";\n\n'
+            }
+        }
+
         const cssString =
             doNotEditComment +
             '/* This css file has all the necessary styles to run all your Framer components */\n' +
             '@import "unframer/styles/reset.css";\n' +
-            '@import "unframer/styles/framer.css";\n\n' +
+            framerCssImport +
             getStyleTokensCss(tokens || []) +
-            breakpointsStyles(breakpoints) +
+            breakpointsStyles(breakpoints, (classPrefix && classPrefix.trim()) || 'unframer') +
             '\n\n' +
             getFontsStyles(allFonts)
         await fs.promises.writeFile(
@@ -705,8 +726,14 @@ export async function bundle({
 
             const prefix =
                 `// @ts-nocheck\n` + `/* eslint-disable */\n` + doNotEditComment
-            const codeJsx = prefix + formatted
-            const codeJs = prefix + file.text
+            let outJsx = formatted
+            let outJs = file.text
+            if (classPrefix && classPrefix !== 'framer') {
+                outJsx = outJsx.split('framer-').join(classPrefix + '-')
+                outJs = outJs.split('framer-').join(classPrefix + '-')
+            }
+            const codeJsx = prefix + outJsx
+            const codeJs = prefix + outJs
             logger.log(`writing`, path.relative(out, file.path))
             await fs.promises.mkdir(path.dirname(paths.jsxPath), {
                 recursive: true,

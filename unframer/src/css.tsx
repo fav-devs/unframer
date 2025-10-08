@@ -127,14 +127,14 @@ export const defaultBreakpointSizes = {
 export type BreakpointSizes = typeof defaultBreakpointSizes
 
 // @deprecated TODO remove this in future releases
-export const breakpointsStylesLegacy = (breakpointSizes?: BreakpointSizes) => {
+export const breakpointsStylesLegacy = (breakpointSizes?: BreakpointSizes, runtimePrefix: string = 'unframer') => {
     breakpointSizes = { ...defaultBreakpointSizes, ...breakpointSizes }
     return /* css */ `
 /* Base */
 @media (min-width: ${breakpointSizes.base}px) and (max-width: ${
         breakpointSizes.sm - 1
     }px) {
-    .unframer-hidden.unframer-base {
+    .${runtimePrefix}-hidden.${runtimePrefix}-base {
         display: contents;
     }
 }
@@ -143,7 +143,7 @@ export const breakpointsStylesLegacy = (breakpointSizes?: BreakpointSizes) => {
 @media (min-width: ${breakpointSizes.sm}px) and (max-width: ${
         breakpointSizes.md - 1
     }px) {
-    .unframer-hidden.unframer-sm {
+    .${runtimePrefix}-hidden.${runtimePrefix}-sm {
         display: contents;
     }
 }
@@ -152,7 +152,7 @@ export const breakpointsStylesLegacy = (breakpointSizes?: BreakpointSizes) => {
 @media (min-width: ${breakpointSizes.md}px) and (max-width: ${
         breakpointSizes.lg - 1
     }px) {
-    .unframer-hidden.unframer-md {
+    .${runtimePrefix}-hidden.${runtimePrefix}-md {
         display: contents;
     }
 }
@@ -161,7 +161,7 @@ export const breakpointsStylesLegacy = (breakpointSizes?: BreakpointSizes) => {
 @media (min-width: ${breakpointSizes.lg}px) and (max-width: ${
         breakpointSizes.xl - 1
     }px) {
-    .unframer-hidden.unframer-lg {
+    .${runtimePrefix}-hidden.${runtimePrefix}-lg {
         display: contents;
     }
 }
@@ -170,65 +170,65 @@ export const breakpointsStylesLegacy = (breakpointSizes?: BreakpointSizes) => {
 @media (min-width: ${breakpointSizes.xl}px) and (max-width: ${
         breakpointSizes['2xl'] - 1
     }px) {
-    .unframer-hidden.unframer-xl {
+    .${runtimePrefix}-hidden.${runtimePrefix}-xl {
         display: contents;
     }
 }
 
 /* 2 Extra Large */
 @media (min-width: ${breakpointSizes['2xl']}px) {
-    .unframer-hidden.unframer-2xl {
+    .${runtimePrefix}-hidden.${runtimePrefix}-2xl {
         display: contents;
     }
 }
 
-.unframer-hidden {
+.${runtimePrefix}-hidden {
     display: none;
 }
 `
 }
-export const breakpointsStyles = (breakpointSizes?: BreakpointSizes) => {
+export const breakpointsStyles = (breakpointSizes?: BreakpointSizes, runtimePrefix: string = 'unframer') => {
     breakpointSizes = { ...defaultBreakpointSizes, ...breakpointSizes }
     return /* css */ `
 
 /* Base */
 @media (min-width: ${breakpointSizes.base}px) and (max-width: ${breakpointSizes.sm - 1}px) {
-    .unframer-hidden:not(.unframer-base) {
+    .${runtimePrefix}-hidden:not(.${runtimePrefix}-base) {
         display: none !important;
     }
 }
 
 /* Small */
 @media (min-width: ${breakpointSizes.sm}px) and (max-width: ${breakpointSizes.md - 1}px) {
-    .unframer-hidden:not(.unframer-sm) {
+    .${runtimePrefix}-hidden:not(.${runtimePrefix}-sm) {
         display: none !important;
     }
 }
 
 /* Medium */
 @media (min-width: ${breakpointSizes.md}px) and (max-width: ${breakpointSizes.lg - 1}px) {
-    .unframer-hidden:not(.unframer-md) {
+    .${runtimePrefix}-hidden:not(.${runtimePrefix}-md) {
         display: none !important;
     }
 }
 
 /* Large */
 @media (min-width: ${breakpointSizes.lg}px) and (max-width: ${breakpointSizes.xl - 1}px) {
-    .unframer-hidden:not(.unframer-lg) {
+    .${runtimePrefix}-hidden:not(.${runtimePrefix}-lg) {
         display: none !important;
     }
 }
 
 /* Extra Large */
 @media (min-width: ${breakpointSizes.xl}px) and (max-width: ${breakpointSizes['2xl'] - 1}px) {
-    .unframer-hidden:not(.unframer-xl) {
+    .${runtimePrefix}-hidden:not(.${runtimePrefix}-xl) {
         display: none !important;
     }
 }
 
 /* 2 Extra Large */
 @media (min-width: ${breakpointSizes['2xl']}px) {
-    .unframer-hidden:not(.unframer-2xl) {
+    .${runtimePrefix}-hidden:not(.${runtimePrefix}-2xl) {
         display: none !important;
     }
 }

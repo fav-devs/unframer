@@ -18,6 +18,14 @@ import {
 } from './css.js'
 import { version } from './version.js'
 
+// Runtime prefix for classes (default: 'unframer'). Can be overridden via setUnframerPrefix
+let RUNTIME_PREFIX = 'unframer'
+export function setUnframerPrefix(prefix: string) {
+    if (typeof prefix === 'string' && prefix.trim()) {
+        RUNTIME_PREFIX = prefix.trim()
+    }
+}
+
 function classNames(...args) {
     return args.filter(Boolean).join(' ')
 }
@@ -123,20 +131,22 @@ function removeInactiveUnframerHiddenElements() {
     // Remove all elements with the 'unframer-hidden' class that are not for the current breakpoint
     const windowWidth = window.innerWidth
     const activeBreakpoint = getBreakpointNameFromWindowWidth(windowWidth)
-    const activeClass = activeBreakpoint ? `unframer-${activeBreakpoint}` : null
+    const activeClass = activeBreakpoint ? `${RUNTIME_PREFIX}-${activeBreakpoint}` : null
 
-    console.log('Active unframer breakpoint class:', activeClass)
+    // Removed noisy console log for active breakpoint class in production
 
-    document.querySelectorAll('.unframer-hidden').forEach((el) => {
-        // Merge: Only remove the element itself if it has 'unframer-hidden' and does not match the current breakpoint's class.
-        if (
-            el.classList.contains('unframer-hidden') &&
-            activeClass &&
-            !el.classList.contains(activeClass)
-        ) {
-            el.parentNode?.removeChild(el)
-        }
-    })
+    document
+        .querySelectorAll(`.${RUNTIME_PREFIX}-hidden`)
+        .forEach((el) => {
+            // Only remove the element if it has '<prefix>-hidden' and does not match the current breakpoint's class.
+            if (
+                el.classList.contains(`${RUNTIME_PREFIX}-hidden`) &&
+                activeClass &&
+                !el.classList.contains(activeClass)
+            ) {
+                el.parentNode?.removeChild(el)
+            }
+        })
 }
 
 if (typeof window !== 'undefined') {
@@ -193,13 +203,13 @@ export const WithFramerBreakpoints = <
             existingVariant.breakpoints.push(breakpointName)
             existingVariant.className = classNames(
                 existingVariant.className,
-                `unframer-${breakpointName}`,
+                `${RUNTIME_PREFIX}-${breakpointName}`,
             )
         } else {
             variants.set(realVariant, {
                 className: classNames(
-                    'unframer unframer-hidden',
-                    `unframer-${breakpointName}`,
+                    `${RUNTIME_PREFIX} ${RUNTIME_PREFIX}-hidden`,
+                    `${RUNTIME_PREFIX}-${breakpointName}`,
                 ),
                 variant: realVariant,
                 breakpoints: [breakpointName],
