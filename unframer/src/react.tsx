@@ -451,16 +451,13 @@ export function ContextProviders({
 }
 
 /**
- * Add Unframer debug information to debug websites using Unframer
+ * Add runtime debug information (hidden by default)
  */
 function DebugUnframerVersion() {
     return null
     return (
         <details style={{ display: 'none' }}>
-            Using{' '}
-            <a href='https://unframer.co' className=''>
-                Framer React Export
-            </a>{' '}
+            Using Reframe React Export{' '}
             version {version}
         </details>
     )

@@ -379,13 +379,13 @@ export async function configFromFetch({
 }) {
     logger.log(`Fetching config for project ${projectId}`)
 
-    const url = process.env.UNFRAMER_SERVER_URL
-    if (url) {
+    const url = process.env.UNFRAMER_SERVER_URL || 'http://localhost:4800'
+    if (!process.env.UNFRAMER_SERVER_URL) {
+        console.log(`[cli] UNFRAMER_SERVER_URL not set; defaulting to ${url}`)
+    } else {
         console.log(`using server url ${url}`)
     }
-    const client = await createClient({
-        url: url || 'https://unframer.co',
-    })
+    const client = await createClient({ url })
 
     spinner.start(`Fetching config for project ${projectId}`)
     const { data, error } = await client.api.plugins.reactExportPlugin
