@@ -7,6 +7,7 @@ import { resolvePackage } from './exporter'
 import { notifyError } from './sentry'
 import { dispatcher } from './undici-dispatcher'
 import { framerPackageVersions } from './framer-package-versions'
+const RUNTIME_PKG = (process.env.REFRAME_RUNTIME_PKG || 'unframer') as string
 
 
 export const defaultExternalPackages = [
@@ -82,13 +83,19 @@ export function esbuildPluginBundleDependencies({
                 }
                 if (args.path === 'framer') {
                     return {
-                        path: 'unframer',
+                        path: RUNTIME_PKG,
+                        external: true,
+                    }
+                }
+                if (args.path === 'unframer') {
+                    return {
+                        path: RUNTIME_PKG,
                         external: true,
                     }
                 }
                 if ('framer-motion' === args.path) {
                     return {
-                        path: 'unframer',
+                        path: RUNTIME_PKG,
                         external: true,
                     }
                 }

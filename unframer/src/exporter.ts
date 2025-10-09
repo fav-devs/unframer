@@ -42,6 +42,7 @@ import {
 } from './esbuild'
 // Reframe customization knobs (env-driven)
 const RUNTIME_PACKAGE_NAME = process.env.REFRAME_RUNTIME_PKG || 'unframer'
+const TOKEN_PREFIX = process.env.REFRAME_TOKEN_PREFIX || (RUNTIME_PACKAGE_NAME || 'unframer')
 const GENERATED_BANNER_BRAND = process.env.REFRAME_BRAND || 'Unframer'
 const GENERATED_BANNER_ENABLE = String(process.env.REFRAME_EMIT_BANNER ?? 'true').toLowerCase() !== 'false'
 const SUPPRESS_INSTALL = String(process.env.REFRAME_SUPPRESS_INSTALL ?? 'false').toLowerCase() === 'true'
@@ -272,7 +273,7 @@ export async function bundle({
                                 import { ContextProviders } from '${RUNTIME_PACKAGE_NAME}'
                                 import Component from '${await resolveRedirect({ url, signal })}'
                                 
-                                import { WithFramerBreakpoints, setUnframerPrefix } from '${RUNTIME_PACKAGE_NAME}'
+                                import { WithFramerBreakpoints } from '${RUNTIME_PACKAGE_NAME}'
                                 import { routes } from '${routesImportPath}'
                                 const locales = ${
                                     JSON.stringify(config.locales) || '[]'
@@ -536,7 +537,7 @@ export async function bundle({
         })
 
         // Prepare CSS imports with optional class prefix rewrite for Framer classes
-        let framerCssImport = '@import "unframer/styles/framer.css";\n\n'
+        let framerCssImport = `@import "${RUNTIME_PACKAGE_NAME}/styles/framer.css";\\n\\n`
         if (classPrefix && classPrefix !== 'framer') {
             try {
                 const framerCssPath = path.resolve(__dirname, 'styles', 'framer.css')
@@ -547,14 +548,14 @@ export async function bundle({
                 framerCssImport = '@import "./framer-prefixed.css";\n\n'
             } catch (e) {
                 // Fallback to default import if anything goes wrong
-                framerCssImport = '@import "unframer/styles/framer.css";\n\n'
+                framerCssImport = `@import "${RUNTIME_PACKAGE_NAME}/styles/framer.css";\\n\\n`
             }
         }
 
         const cssString =
             doNotEditComment +
             '/* This css file has all the necessary styles to run all your Framer components */\n' +
-            '@import "unframer/styles/reset.css";\n' +
+            `@import "${RUNTIME_PACKAGE_NAME}/styles/reset.css";\\n` +
             framerCssImport +
             getStyleTokensCss(tokens || []) +
             breakpointsStyles(breakpoints, (classPrefix && classPrefix.trim()) || 'unframer') +
@@ -995,7 +996,7 @@ export function getStyleTokensCss(
     const lightUnframerTokens = tokens
         .map(
             (token) =>
-                '    --unframer-' +
+                '    --' + TOKEN_PREFIX + '-' +
                 kebabCase(token.name || token.id) +
                 ': ' +
                 token.lightColor +
@@ -1013,7 +1014,7 @@ export function getStyleTokensCss(
     const darkUnframerTokens = tokens
         .map(
             (token) =>
-                '    --unframer-' +
+                '    --' + TOKEN_PREFIX + '-' +
                 kebabCase(token.name || token.id) +
                 ': ' +
                 token.darkColor +
