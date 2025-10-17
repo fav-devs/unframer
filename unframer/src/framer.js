@@ -11424,7 +11424,7 @@ function ReorderItemComponent({
 }
 var ReorderItem = /* @__PURE__ */ forwardRef(ReorderItemComponent,);
 
-// /:https://app.framerstatic.com/framer.LRXNL3UI.mjs
+// /:https://app.framerstatic.com/framer.4UJ3BCAV.mjs
 
 import React42 from 'react';
 import { startTransition as startTransition2, } from 'react';
@@ -24280,7 +24280,27 @@ var Layer = /* @__PURE__ */ (() => {
   __publicField(Layer2, 'defaultProps', {},);
   return Layer2;
 })();
-var TickerItemContext = /* @__PURE__ */ createContext(void 0,);
+function flattenChildrenToTickerItems(children,) {
+  const result = [];
+  Children.forEach(children, (child) => {
+    if (isValidElement(child,) && child.type === Fragment) {
+      result.push(...flattenChildrenToTickerItems(child.props.children,),);
+    } else {
+      result.push(child,);
+    }
+  },);
+  return result;
+}
+var TickerContext = /* @__PURE__ */ (() => {
+  const Context2 = createContext(null,);
+  Context2.displayName = 'TickerContext';
+  return Context2;
+})();
+var TickerItemContext = /* @__PURE__ */ (() => {
+  const Context2 = createContext(void 0,);
+  Context2.displayName = 'TickerItemContext';
+  return Context2;
+})();
 function TickerItem({
   offset,
   axis,
@@ -24290,7 +24310,9 @@ function TickerItem({
   bounds,
   inset: inset2,
   alignItems,
-  itemSize = 'auto',
+  reproject = true,
+  size = 'auto',
+  crossSize = 'fit-content',
   ...props
 },) {
   const ref = useRef3(null,);
@@ -24299,8 +24321,13 @@ function TickerItem({
     end,
   } = bounds;
   const transform2 = useTransform(() => {
+    if (!reproject) {
+      return 0;
+    }
     const currentOffset = offset.get();
-    if (!start2 && !end || !listSize) return 0;
+    if (!start2 && !end || !listSize) {
+      return 0;
+    }
     if (currentOffset + end <= -inset2) {
       return listSize;
     }
@@ -24309,34 +24336,32 @@ function TickerItem({
   const itemOffset = useTransform(() => {
     const currentOffset = offset.get();
     const currentTransform = transform2.get();
-    if (!start2 && !end || !listSize) return 0;
+    if (!start2 && !end || !listSize) {
+      return 0;
+    }
     return currentOffset + start2 + currentTransform;
   },);
-  const itemWrapperOffAxisSize = alignItems === 'stretch' ? '100%' : 'fit-content';
+  const itemWrapperOffAxisSize = alignItems === 'stretch' ? '100%' : crossSize;
   const isClone = cloneIndex !== void 0;
   return /* @__PURE__ */ jsx3(TickerItemContext.Provider, {
     value: {
       offset: itemOffset,
     },
-    children: /* @__PURE__ */ jsx3(LayoutGroup, {
-      inherit: 'id',
-      id: isClone ? `clone-${cloneIndex}` : void 0,
-      children: /* @__PURE__ */ jsx3(motion.li, {
-        ref,
-        ...props,
-        className: cloneIndex === void 0 ? 'ticker-item' : 'clone-item',
-        style: {
-          flexGrow: 0,
-          flexShrink: 0,
-          flexBasis: itemSize === 'fill' ? '100%' : void 0,
-          display: itemSize === 'fill' ? 'flex' : void 0,
-          height: axis === 'x' ? itemWrapperOffAxisSize : void 0,
-          width: axis === 'y' ? itemWrapperOffAxisSize : void 0,
-          x: axis === 'x' ? transform2 : 0,
-          y: axis === 'y' ? transform2 : 0,
-        },
-        'aria-hidden': isClone ? true : void 0,
-      },),
+    children: /* @__PURE__ */ jsx3(motion.li, {
+      ref,
+      ...props,
+      className: cloneIndex === void 0 ? 'ticker-item' : 'clone-item',
+      style: {
+        flexGrow: 0,
+        flexShrink: 0,
+        flexBasis: size === 'fill' ? '100%' : void 0,
+        display: size === 'fill' ? 'flex' : void 0,
+        height: axis === 'x' ? itemWrapperOffAxisSize : void 0,
+        width: axis === 'y' ? itemWrapperOffAxisSize : void 0,
+        x: axis === 'x' ? transform2 : 0,
+        y: axis === 'y' ? transform2 : 0,
+      },
+      'aria-hidden': isClone ? true : void 0,
     },),
   },);
 }
@@ -24344,7 +24369,9 @@ function useFocusNavigation(containerRef, axis, focusOffset, offset, setHasFocus
   const isFocusTrapped = useRef3(false,);
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
     let detectionEnabled = false;
     const abortController = new AbortController();
     const eventOptions = {
@@ -24362,6 +24389,9 @@ function useFocusNavigation(containerRef, axis, focusOffset, offset, setHasFocus
     let focusIndex = 0;
     const applyFocusOffset = () => {
       const nextFocusableElement = focusableElements2[focusIndex];
+      if (!nextFocusableElement) {
+        return;
+      }
       nextFocusableElement.focus();
       focusOffset.set(-nextFocusableElement[offsetProp],);
       container[scrollProp] = 0;
@@ -24403,15 +24433,20 @@ function useFocusNavigation(containerRef, axis, focusOffset, offset, setHasFocus
       applyFocusOffset();
     };
     const startFocusTrap = () => {
-      if (isFocusTrapped.current) return;
-      setHasFocus(true,);
-      isFocusTrapped.current = true;
+      if (isFocusTrapped.current) {
+        return;
+      }
       focusableElements2 = Array.from(
         container.querySelectorAll(
           '.ticker-item a, .ticker-item button, .ticker-item input, .ticker-item textarea, .ticker-item select, .ticker-item [tabindex]:not([tabindex="-1"]), .ticker-item [contenteditable="true"]',
         ),
       ).filter(isHTMLElement,);
       focusIndex = 0;
+      if (!focusableElements2.length) {
+        return;
+      }
+      setHasFocus(true,);
+      isFocusTrapped.current = true;
       applyFocusOffset();
       window.addEventListener('focus', detectTrapEnd, eventOptionsWithCapture,);
       window.addEventListener('blur', detectTrapEnd, eventOptionsWithCapture,);
@@ -24423,7 +24458,9 @@ function useFocusNavigation(containerRef, axis, focusOffset, offset, setHasFocus
       }
     };
     const endFocusTrap = () => {
-      if (!isFocusTrapped.current) return;
+      if (!isFocusTrapped.current) {
+        return;
+      }
       isFocusTrapped.current = false;
       setHasFocus(false,);
       offset.set(focusOffset.get(),);
@@ -24435,26 +24472,32 @@ function useFocusNavigation(containerRef, axis, focusOffset, offset, setHasFocus
       const {
         target,
       } = event;
-      if (!isHTMLElement(target,)) return;
+      if (!isHTMLElement(target,)) {
+        return;
+      }
       if (!isFocusTrapped.current) {
         startFocusTrap();
       }
     };
     const detectFocusTrapEnable = () => {
-      if (detectionEnabled) return;
+      if (detectionEnabled) {
+        return;
+      }
       detectionEnabled = true;
       container.addEventListener('focus', handleFocus, eventOptionsWithCapture,);
       window.addEventListener('pointermove', handlePointerMove, eventOptions,);
     };
     const handlePointerMove = () => {
-      if (!detectionEnabled) return;
+      if (!detectionEnabled) {
+        return;
+      }
       detectionEnabled = false;
       container.removeEventListener('focus', handleFocus, true,);
       window.removeEventListener('pointermove', handlePointerMove, eventOptions,);
     };
     const handleAriaHiddenClicks = (event) => {
       const target = event.target;
-      const ariaHiddenAncestor = target.closest('[aria-hidden="true"]',);
+      let ariaHiddenAncestor = target.closest('[aria-hidden="true"]',);
       if (ariaHiddenAncestor) {
         ariaHiddenAncestor.removeAttribute('aria-hidden',);
       }
@@ -24500,7 +24543,7 @@ var alignAlias = {
   start: 'flex-start',
   end: 'flex-end',
 };
-function Ticker({
+function TickerComponent({
   items,
   velocity = 50,
   hoverFactor = 1,
@@ -24510,56 +24553,73 @@ function Ticker({
   offset,
   isStatic = false,
   itemSize = 'auto',
+  _itemCrossSize: itemCrossSize = 'fit-content',
   overflow = false,
+  loop = true,
+  children,
+  as = 'div',
   ...props
-},) {
+}, ref,) {
   const [state, setState,] = useState({
     visibleLength: 0,
     inset: 0,
     totalItemLength: 0,
+    containerLength: 0,
     itemPositions: [],
+    isMeasured: false,
   },);
   const alignItems = alignAlias[align] || align;
   if (isStatic) {
     const renderedOffset2 = useMotionValue(0,);
     return /* @__PURE__ */ jsx3(ListView, {
       containerProps: props,
+      containerRef: ref,
+      children,
       gap,
       axis,
       alignItems,
       renderedOffset: renderedOffset2,
       items,
       itemSize,
+      itemCrossSize,
       state,
       overflow,
       isStatic: true,
+      as,
     },);
   }
   const [hasFocus, setHasFocus,] = useState(false,);
   const velocityFactor = useMotionValue(1,);
   const defaultOffset22 = useMotionValue(0,);
   offset ?? (offset = defaultOffset22);
-  const wrappedOffset = useTransform(() => wrap(-state.totalItemLength - gap - state.inset, -state.inset, offset.get(),));
+  const wrappedOffset = useTransform(() => {
+    return wrap(-state.totalItemLength - gap - state.inset, -state.inset, offset.get(),);
+  },);
   const focusOffset = useMotionValue(0,);
-  const renderedOffset = hasFocus ? focusOffset : wrappedOffset;
-  const containerRef = useRef3(null,);
+  const renderedOffset = hasFocus ? focusOffset : loop ? wrappedOffset : offset;
+  const internalContainerRef = useRef3(null,);
+  const containerRef = useComposedRefs(ref, internalContainerRef,);
   const listRef = useRef3(null,);
-  const isInViewport = useInView(containerRef, {
+  const isInViewport = useInView(internalContainerRef, {
     margin: '100px',
   },);
   const isPageInView = usePageInView();
   const isInView = isInViewport && isPageInView;
   const isReducedMotion = useReducedMotion();
   const updateMeasurements = () => {
-    if (!containerRef.current || !listRef.current) return;
+    if (!internalContainerRef.current || !listRef.current) {
+      return;
+    }
     const viewportLengthProp = axis === 'x' ? 'innerWidth' : 'innerHeight';
     const lengthProp = axis === 'x' ? 'offsetWidth' : 'offsetHeight';
     const insetProp = axis === 'x' ? 'offsetLeft' : 'offsetTop';
     const paddingStartProp = axis === 'x' ? 'paddingLeft' : 'paddingTop';
-    const container = containerRef.current;
+    const container = internalContainerRef.current;
     const list = listRef.current;
     const allItems = list.querySelectorAll('.ticker-item',);
-    if (!allItems.length) return;
+    if (!allItems.length) {
+      return;
+    }
     let haveItemSizesChanged = false;
     const itemPositions = [];
     for (let i = 0; i < allItems.length; i++) {
@@ -24575,13 +24635,8 @@ function Ticker({
         haveItemSizesChanged = true;
       }
     }
-    const visibleLength = overflow ? window[viewportLengthProp] : (
-      /**
-       * Cap to viewport size to prevent infinite or wasteful cloning in the event that the
-       * container width is reactive to the number of children rendered within it.
-       */
-      Math.min(container[lengthProp], window[viewportLengthProp],)
-    );
+    const containerLength = Math.min(container[lengthProp], window[viewportLengthProp],);
+    const visibleLength = overflow ? window[viewportLengthProp] : containerLength;
     const totalItemLength = calcTotalItemLength(itemPositions,);
     const computedContainerStyle = window.getComputedStyle(container,);
     const containerPaddingStart = parseInt(computedContainerStyle[paddingStartProp] ?? 0,);
@@ -24594,14 +24649,18 @@ function Ticker({
         itemPositions,
         totalItemLength,
         inset: inset2,
+        containerLength,
+        isMeasured: true,
       },);
     }
   };
   useIsomorphicLayoutEffect(() => {
-    if (!isInView || !containerRef.current) return;
+    if (!isInView || !internalContainerRef.current) {
+      return;
+    }
     updateMeasurements();
     const trackViewport = overflow ? resize(updateMeasurements,) : void 0;
-    const trackContainer = resize(containerRef.current, updateMeasurements,);
+    const trackContainer = resize(internalContainerRef.current, updateMeasurements,);
     return () => {
       trackViewport == null ? void 0 : trackViewport();
       trackContainer();
@@ -24617,60 +24676,83 @@ function Ticker({
       : noop,
   );
   const cloneCount = useMemo2(() => {
-    if (!isMeasured || !state.visibleLength) return 0;
+    if (!isMeasured || !state.visibleLength) {
+      return 0;
+    }
     return calcNumClones(state.visibleLength, state.itemPositions, gap,);
   }, [isMeasured, state,],);
   const totalListSize = state.totalItemLength === 0 ? 0 : (state.totalItemLength + gap) * (cloneCount + 1);
-  const clonedItems = [];
-  for (let i = 0; i < cloneCount; i++) {
-    items.forEach((item, itemIndex,) => {
-      const originalBounds = state.itemPositions[itemIndex];
-      const cloneOffset = (state.totalItemLength + gap) * (i + 1);
-      const cloneBounds = originalBounds
-        ? {
-          start: originalBounds.start + cloneOffset,
-          end: originalBounds.end + cloneOffset,
-        }
-        : defaultBounds;
-      clonedItems.push(/* @__PURE__ */ jsx3(TickerItem, {
-        offset: renderedOffset,
-        axis,
-        listSize: totalListSize,
-        cloneIndex: itemIndex,
-        bounds: cloneBounds,
-        inset: state.inset,
-        alignItems,
-        itemSize,
-        children: item,
-      }, `clone-${i}-${itemIndex}`,),);
-    },);
+  const clonedItemGroups = [];
+  if (loop) {
+    for (let i = 0; i < cloneCount; i++) {
+      const clonedItems = [];
+      items.forEach((item, itemIndex,) => {
+        const originalBounds = state.itemPositions[itemIndex];
+        const cloneOffset = (state.totalItemLength + gap) * (i + 1);
+        const cloneBounds = originalBounds
+          ? {
+            start: originalBounds.start + cloneOffset,
+            end: originalBounds.end + cloneOffset,
+          }
+          : defaultBounds;
+        clonedItems.push(/* @__PURE__ */ jsx3(TickerItem, {
+          offset: renderedOffset,
+          axis,
+          listSize: totalListSize,
+          cloneIndex: itemIndex,
+          bounds: cloneBounds,
+          inset: state.inset,
+          alignItems,
+          size: itemSize,
+          crossSize: itemCrossSize,
+          children: item,
+        }, `clone-${i}-${itemIndex}`,),);
+      },);
+      const id3 = `ticker-group-${i}`;
+      clonedItemGroups.push(/* @__PURE__ */ jsx3(LayoutGroup, {
+        id: id3,
+        children: clonedItems,
+      }, id3,),);
+    }
   }
-  useFocusNavigation(containerRef, axis, focusOffset, offset, setHasFocus,);
-  return /* @__PURE__ */ jsx3(ListView, {
-    containerProps: props,
-    containerRef,
-    listRef,
-    gap,
-    axis,
-    alignItems,
-    isMeasured,
-    isInView,
-    renderedOffset,
-    items,
-    itemSize,
-    clonedItems,
-    onPointerEnter: () => {
-      animate(velocityFactor, hoverFactor,);
+  useFocusNavigation(internalContainerRef, axis, focusOffset, offset, setHasFocus,);
+  return /* @__PURE__ */ jsx3(TickerContext.Provider, {
+    value: {
+      ...state,
+      gap,
     },
-    onPointerLeave: () => {
-      animate(velocityFactor, 1,);
-    },
-    totalListSize,
-    state,
-    overflow,
+    children: /* @__PURE__ */ jsx3(ListView, {
+      containerProps: props,
+      children,
+      containerRef,
+      listRef,
+      gap,
+      axis,
+      alignItems,
+      isMeasured,
+      isInView,
+      renderedOffset,
+      items,
+      itemSize,
+      itemCrossSize,
+      clonedItems: clonedItemGroups,
+      onPointerEnter: () => {
+        animate(velocityFactor, hoverFactor,);
+      },
+      onPointerLeave: () => {
+        animate(velocityFactor, 1,);
+      },
+      totalListSize,
+      state,
+      overflow,
+      loop,
+      as,
+    },),
   },);
 }
+var Ticker = /* @__PURE__ */ forwardRef(TickerComponent,);
 function ListView({
+  children,
   containerProps,
   containerRef,
   listRef,
@@ -24687,10 +24769,14 @@ function ListView({
   onPointerLeave,
   totalListSize,
   itemSize,
+  itemCrossSize,
   overflow,
   state,
+  loop,
+  as,
 },) {
-  return /* @__PURE__ */ jsx3(motion.div, {
+  const MotionComponent = useMemo2(() => motion.create(as,), [as,],);
+  return /* @__PURE__ */ jsxs(MotionComponent, {
     ...containerProps,
     ref: containerRef,
     style: {
@@ -24700,39 +24786,45 @@ function ListView({
     },
     onPointerEnter,
     onPointerLeave,
-    children: /* @__PURE__ */ jsxs(motion.ul, {
-      ref: listRef,
-      style: {
-        ...listStyle,
-        flexDirection: axis === 'x' ? 'row' : 'column',
-        gap: `${gap}px`,
-        x: axis === 'x' ? renderedOffset : 0,
-        y: axis === 'y' ? renderedOffset : 0,
-        opacity: isMeasured || isStatic ? 1 : 0,
-        alignItems,
-        willChange: isMeasured && isInView ? 'transform' : void 0,
-        width: '100%',
-        height: '100%',
-        maxHeight: '100%',
-        maxWidth: '100%',
-      },
-      children: [
-        items.map((item, index,) =>
-          /* @__PURE__ */ jsx3(TickerItem, {
-            axis,
-            offset: renderedOffset,
-            listSize: totalListSize,
-            itemIndex: index,
-            bounds: state.itemPositions[index] ?? defaultBounds,
-            inset: state.inset,
-            alignItems,
-            itemSize,
-            children: item,
-          }, 'original-' + index,)
-        ),
-        clonedItems || null,
-      ],
-    },),
+    children: [
+      /* @__PURE__ */ jsxs(motion.ul, {
+        ref: listRef,
+        style: {
+          ...listStyle,
+          flexDirection: axis === 'x' ? 'row' : 'column',
+          gap: `${gap}px`,
+          x: axis === 'x' ? renderedOffset : 0,
+          y: axis === 'y' ? renderedOffset : 0,
+          opacity: isMeasured || isStatic ? 1 : 0,
+          alignItems,
+          willChange: isMeasured && isInView ? 'transform' : void 0,
+          width: '100%',
+          height: '100%',
+          maxHeight: '100%',
+          maxWidth: '100%',
+        },
+        role: 'group',
+        children: [
+          items.map((item, index,) =>
+            /* @__PURE__ */ jsx3(TickerItem, {
+              axis,
+              offset: renderedOffset,
+              listSize: totalListSize,
+              itemIndex: index,
+              bounds: state.itemPositions[index] ?? defaultBounds,
+              inset: state.inset,
+              alignItems,
+              size: itemSize,
+              crossSize: itemCrossSize,
+              reproject: loop,
+              children: item,
+            }, 'original-' + index,)
+          ),
+          clonedItems || null,
+        ],
+      },),
+      children,
+    ],
   },);
 }
 var defaultBounds = {
@@ -24762,60 +24854,124 @@ function getCumulativeOffset(element, axis,) {
   }
   return offset;
 }
-var Ticker2 = /* @__PURE__ */ forwardRef(function Ticker3(props, ref,) {
+var BasicTicker = /* @__PURE__ */ forwardRef(function BasicTicker2(props, ref,) {
   const {
     children,
     as: asProp,
     tickerEffectVelocity,
     tickerEffectHoverModifier,
-    tickerEffectDirection,
+    tickerEffectAxis,
     tickerEffectDirectionModifier,
     tickerEffectAlign,
     tickerEffectGap,
+    tickerEffectItemSize,
+    tickerEffectItemCrossSize,
+    tickerEffectOverflow,
     ...rest
   } = props;
   const Component18 = asProp ?? motion.div;
   const isStatic = useIsStaticRenderer();
-  const align = tickerEffectAlign ?? 'center';
-  const gap = typeof tickerEffectGap === 'string' ? parseInt(tickerEffectGap,) : 10;
-  const direction = tickerEffectDirection ?? 'row';
   const baseVelocity = tickerEffectVelocity ?? 100;
   const hoverModifier = tickerEffectHoverModifier ?? 1;
   const directionModifier = tickerEffectDirectionModifier ?? 1;
   const velocity = baseVelocity * directionModifier;
-  return /* @__PURE__ */ jsx3(Component18, {
+  return /* @__PURE__ */ jsx3(Ticker, {
     ref,
+    as: Component18,
     ...rest,
-    style: {
-      position: 'relative',
-      ...rest.style,
-    },
-    children: /* @__PURE__ */ jsx3(Ticker, {
-      items: unwrapFragments(children,),
-      gap: isFiniteNumber(gap,) ? gap : 10,
-      axis: direction === 'column' ? 'y' : 'x',
-      align,
-      isStatic,
-      style: {
-        height: '100%',
-        width: '100%',
-      },
-      velocity,
-      hoverFactor: hoverModifier,
-    },),
+    items: flattenChildrenToTickerItems(children,),
+    gap: tickerEffectGap,
+    axis: tickerEffectAxis,
+    align: tickerEffectAlign ?? 'center',
+    isStatic,
+    velocity,
+    hoverFactor: hoverModifier,
+    _itemCrossSize: tickerEffectItemCrossSize,
+    itemSize: tickerEffectItemSize,
+    overflow: tickerEffectOverflow,
   },);
 },);
-function unwrapFragments(children,) {
-  const result = [];
-  Children.forEach(children, (child) => {
-    if (isValidElement(child,) && child.type === Fragment) {
-      result.push(...unwrapFragments(child.props.children,),);
-    } else {
-      result.push(child,);
+var DraggableTicker = /* @__PURE__ */ forwardRef(function DraggableTicker2(props, ref,) {
+  const {
+    children,
+    as: asProp,
+    tickerEffectVelocity,
+    tickerEffectHoverModifier,
+    tickerEffectAxis,
+    tickerEffectDirectionModifier,
+    tickerEffectAlign,
+    tickerEffectGap,
+    tickerEffectItemSize,
+    tickerEffectItemCrossSize,
+    tickerEffectOverflow,
+    ...rest
+  } = props;
+  const Component18 = asProp ?? motion.div;
+  const baseVelocity = tickerEffectVelocity ?? 100;
+  const hoverModifier = tickerEffectHoverModifier ?? 1;
+  const directionModifier = tickerEffectDirectionModifier ?? 1;
+  const targetVelocity = baseVelocity * directionModifier;
+  const offsetMotionValue = useMotionValue(0,);
+  const lastDrag = useRef3(0,);
+  const dragMomentum = useRef3(false,);
+  const isHovering = useRef3(false,);
+  useAnimationFrame((_, delta,) => {
+    const velocity = Math.abs(offsetMotionValue.getVelocity(),);
+    const currentTargetVelocity = isHovering.current ? targetVelocity * hoverModifier : targetVelocity;
+    if (performance.now() > lastDrag.current && (!dragMomentum.current || velocity < Math.abs(currentTargetVelocity,))) {
+      const frameOffset = delta / 1e3 * currentTargetVelocity;
+      const updated = offsetMotionValue.get() - frameOffset;
+      if (dragMomentum.current) {
+        offsetMotionValue.stop();
+        dragMomentum.current = false;
+      }
+      offsetMotionValue.set(updated,);
     }
   },);
-  return result;
-}
+  return /* @__PURE__ */ jsx3(Ticker, {
+    ref,
+    as: Component18,
+    ...rest,
+    items: flattenChildrenToTickerItems(children,),
+    gap: tickerEffectGap,
+    axis: tickerEffectAxis,
+    align: tickerEffectAlign ?? 'center',
+    itemSize: tickerEffectItemSize,
+    _itemCrossSize: tickerEffectItemCrossSize,
+    overflow: tickerEffectOverflow,
+    _dragX: tickerEffectAxis === 'x' ? offsetMotionValue : void 0,
+    _dragY: tickerEffectAxis === 'y' ? offsetMotionValue : void 0,
+    offset: offsetMotionValue,
+    drag: tickerEffectAxis,
+    onDragEnd: () => {
+      lastDrag.current = performance.now();
+      dragMomentum.current = true;
+    },
+    onMouseEnter: () => {
+      isHovering.current = true;
+    },
+    onMouseLeave: () => {
+      isHovering.current = false;
+    },
+  },);
+},);
+var Ticker2 = /* @__PURE__ */ forwardRef(function Ticker3(props, ref,) {
+  const {
+    tickerEffectDraggable,
+    ...rest
+  } = props;
+  const isStatic = useIsStaticRenderer();
+  if (isStatic || !tickerEffectDraggable) {
+    return /* @__PURE__ */ jsx3(BasicTicker, {
+      ...rest,
+      ref,
+    },);
+  }
+  return /* @__PURE__ */ jsx3(DraggableTicker, {
+    ...rest,
+    ref,
+  },);
+},);
 function manageCache(cache2, maxEntries,) {
   const size = cache2.size;
   if (size < maxEntries) return;
@@ -25479,8 +25635,10 @@ var VisibleFrame = /* @__PURE__ */ forwardRef(function VisibleFrame2(props, forw
       tickerEffectHoverModifier,
       tickerEffectDirectionModifier,
       tickerEffectGap,
-      tickerEffectDirection,
+      tickerEffectAxis,
       tickerEffectAlign,
+      tickerEffectItemSize,
+      tickerEffectItemCrossSize,
     } = props;
     return /* @__PURE__ */ jsx3(Ticker2, {
       ...dataProps,
@@ -25492,8 +25650,10 @@ var VisibleFrame = /* @__PURE__ */ forwardRef(function VisibleFrame2(props, forw
       tickerEffectHoverModifier,
       tickerEffectDirectionModifier,
       tickerEffectGap,
-      tickerEffectDirection,
+      tickerEffectAxis,
       tickerEffectAlign,
+      tickerEffectItemSize,
+      tickerEffectItemCrossSize,
       children,
     },);
   }
@@ -45245,6 +45405,7 @@ var LocalFontSource = class {
           selector,
           weight,
           family: fontFamily,
+          cssFamilyName: fontFamily.name,
         };
         fontFamily.fonts.push(font,);
       }
@@ -45290,6 +45451,7 @@ var LocalFontSource = class {
           style: style2,
           weight,
           family: fontFamily,
+          cssFamilyName: fontFamily.name,
         };
         fontFamily.fonts.push(font,);
         aliases.set(alias, fontFamilies2,);
@@ -45354,18 +45516,6 @@ var MapWithHash = class extends Map {
     return super.clear();
   }
 };
-function isVariableFont(font,) {
-  return Boolean(font.variationAxes,);
-}
-function createFontFamilyName(font,) {
-  if (isVariableFont(font,) && font.family.source !== 'custom') {
-    return createVariableFontFamilyName(font.family.name,);
-  }
-  return font.family.name;
-}
-function createVariableFontFamilyName(familyName,) {
-  return `${familyName} Variable`;
-}
 function assert2(condition, ...msg) {
   var _a, _b;
   if (condition) return;
@@ -46109,6 +46259,18 @@ function createAbsoluteAssetURL(filename,) {
 function createAbsoluteAssetURLFromAsset(asset,) {
   return createAbsoluteAssetURL(getAssetFilename(asset,),);
 }
+var FRAMER_VARIABLE_FONT_SUFFIX = 'Variable';
+function createCSSFamilyName(fontFamilyName, isVariable,) {
+  return isVariable ? `${fontFamilyName} ${FRAMER_VARIABLE_FONT_SUFFIX}` : fontFamilyName;
+}
+function createCSSFontFamilyFromWebFontLocator(locator, fontSource,) {
+  switch (fontSource) {
+    case 'custom':
+      throw new Error('Custom fonts are not supported',);
+    default:
+      return createCSSFamilyName(locator.name, locator.isVariable,);
+  }
+}
 function supportsOpenType(openTypeData,) {
   return Boolean(openTypeData && Array.isArray(openTypeData,),);
 }
@@ -46183,6 +46345,7 @@ var BuiltInFontSource = class {
         category: properties.font.fontCategory,
         weight: variantNameToWeight(variant,),
         style: getFontStyle(variant,),
+        cssFamilyName: createCSSFamilyName(fontName, isVariableFont2,),
       };
       fontFamily.fonts.push(font,);
       this.assetsByFamily.set(fontName, asset,);
@@ -46444,8 +46607,21 @@ function pickVariableVariants(currentVariant, availableVariants,) {
     variantVariableItalic: variantVariableItalic ?? fallbackItalicVariant,
   };
 }
-var customFontSelectorPrefix = 'CUSTOM;';
+function isVariableFont(font,) {
+  return Boolean(font.variationAxes,);
+}
 var log3 = getLogger('custom-font-source',);
+var customFontSelectorLegacyPrefix = 'CUSTOM;';
+var customFontSelectorPrefixV2 = 'CUSTOMV2;';
+function isCustomFontSelector(selector,) {
+  return isCustomFontSelectorV2(selector,) || isCustomFontSelectorLegacy(selector,);
+}
+function isCustomFontSelectorV2(selector,) {
+  return selector.startsWith(customFontSelectorPrefixV2,);
+}
+function isCustomFontSelectorLegacy(selector,) {
+  return selector.startsWith(customFontSelectorLegacyPrefix,);
+}
 function findDuplicateFont(existingFonts, newFont,) {
   for (let i = 0; i < existingFonts.length; i++) {
     const existingFont = existingFonts[i];
@@ -46457,7 +46633,13 @@ function findDuplicateFont(existingFonts, newFont,) {
         projectDuplicate: true,
       };
     }
-    if (existingFont.selector === newFont.selector && existingFont.weight === newFont.weight && existingFont.style === newFont.style) {
+    if (
+      existingFont &&
+      // TODO: Figure out if we should remove this check, to dedupe fonts with overlapping
+      // style and weight. If we do so, we need to show something in the UI about the fonts
+      // that we are hiding, and a way for the user to resolve the conflict.
+      existingFont.selector === newFont.selector && existingFont.weight === newFont.weight && existingFont.style === newFont.style
+    ) {
       return {
         existingFont,
         index: i,
@@ -46467,15 +46649,14 @@ function findDuplicateFont(existingFonts, newFont,) {
   }
   return void 0;
 }
-function getCustomFontName(fileName, properties,) {
-  if (!properties) return fileName.substring(0, fileName.lastIndexOf('.',),);
+function getLegacyFontFamilyName(properties,) {
   const {
     font,
   } = properties;
   const fontFamily = font.fontFamily;
   const isAssetVariableFont = Array.isArray(font.variationAxes,);
   if (isAssetVariableFont && fontFamily.toLowerCase().includes('variable',)) return fontFamily;
-  const variant = isAssetVariableFont ? 'Variable' : font.fontSubFamily.trim();
+  const variant = isAssetVariableFont ? FRAMER_VARIABLE_FONT_SUFFIX : font.fontSubFamily.trim();
   if (variant === '') return fontFamily;
   return `${fontFamily} ${variant}`;
 }
@@ -46507,6 +46688,7 @@ var CustomFontSource = class _CustomFontSource {
     );
     __publicField(this, 'fontFamilies', [],);
     __publicField(this, 'byFamilyName', /* @__PURE__ */ new Map(),);
+    __publicField(this, 'bySelector', /* @__PURE__ */ new Map(),);
     __publicField(this, 'assetsByFamily', /* @__PURE__ */ new Map(),);
   }
   deprecatedImportFonts(assets,) {
@@ -46514,43 +46696,49 @@ var CustomFontSource = class _CustomFontSource {
     this.fontFamilies.length = 0;
     this.byFamilyName.clear();
     this.assetsByFamily.clear();
+    this.bySelector.clear();
     const fonts = [];
     for (const asset of assets) {
       if (!this.isValidCustomFontAsset(asset,)) {
         continue;
       }
       const variationAxesData = (_a = asset.properties) == null ? void 0 : _a.font.variationAxes;
-      const isVariableFont2 = Array.isArray(variationAxesData,);
-      const fontName = getCustomFontName(asset.name, asset.properties,);
+      const assetIsVariableFont = Array.isArray(variationAxesData,);
+      const fontName = getLegacyFontFamilyName(asset.properties,);
       const fontFamily = this.createFontFamily(fontName,);
       const openTypeData = (_b = asset.properties) == null ? void 0 : _b.font.openTypeData;
-      const variant = isVariableFont2 ? 'variable' : this.inferVariantName(fontName,);
+      const variant = assetIsVariableFont ? 'variable' : this.inferVariantName(fontName,);
       const url = createAbsoluteAssetURLFromAsset(asset,);
+      const selector = _CustomFontSource.createLegacySelector(fontName,);
       const font = {
         assetKey: asset.key,
         family: fontFamily,
-        selector: `${customFontSelectorPrefix}${fontName}`,
+        selector,
         variant,
         file: url,
         hasOpenTypeFeatures: supportsOpenType(openTypeData,),
         variationAxes: validateVariationAxes(variationAxesData,),
         owner: getAssetOwnerType(asset,),
+        cssFamilyName: _CustomFontSource.cssFontFamilyFromSelector(selector,),
       };
       fontFamily.fonts.push(font,);
       this.assetsByFamily.set(fontName, asset,);
+      this.bySelector.set(selector, font,);
       fonts.push(...fontFamily.fonts,);
     }
     return fonts;
   }
   importFonts(assets, enableFontImprovements,) {
-    var _a, _b, _c, _d;
+    var _a, _b, _c;
     if (!enableFontImprovements) {
       return this.deprecatedImportFonts(assets,);
     }
     this.fontFamilies.length = 0;
     this.byFamilyName.clear();
     this.assetsByFamily.clear();
+    this.bySelector.clear();
     const fonts = {};
+    const legacyFonts = {};
     for (const asset of assets) {
       if (!this.isValidCustomFontAsset(asset,)) {
         continue;
@@ -46562,39 +46750,50 @@ var CustomFontSource = class _CustomFontSource {
         style: style2,
       } = getCustomFontInfo(asset.properties.font,);
       const fontFamily = this.createFontFamily(family,);
-      const openTypeData = (_a = asset.properties) == null ? void 0 : _a.font.openTypeData;
+      const openTypeData = asset.properties.font.openTypeData;
       const url = createAbsoluteAssetURLFromAsset(asset,);
       const ownerType = getAssetOwnerType(asset,);
+      const selector = _CustomFontSource.createSelector(fontFamily.name, variant,);
+      const legacyFontFamilyName = getLegacyFontFamilyName(asset.properties,);
+      const legacyFontSelector = _CustomFontSource.createLegacySelector(legacyFontFamilyName,);
+      const cssFamilyName = enableFontImprovements
+        ? _CustomFontSource.cssFontFamilyFromSelector(selector,)
+        : _CustomFontSource.cssFontFamilyFromSelector(legacyFontSelector,);
       const font = {
         assetKey: asset.key,
         family: fontFamily,
-        selector: _CustomFontSource.createSelector(fontFamily.name, variant,),
+        selector,
         variant,
         weight,
         style: style2,
         file: url,
         hasOpenTypeFeatures: supportsOpenType(openTypeData,),
-        variationAxes: validateVariationAxes((_b = asset.properties) == null ? void 0 : _b.font.variationAxes,),
+        variationAxes: validateVariationAxes((_a = asset.properties) == null ? void 0 : _a.font.variationAxes,),
         owner: ownerType,
+        legacyFontSelector,
+        cssFamilyName,
       };
       const duplicateInfo = findDuplicateFont(fontFamily.fonts, font,);
       if (duplicateInfo && duplicateInfo.projectDuplicate) {
         if (font.owner === 'project') {
           fontFamily.fonts[duplicateInfo.index] = font;
-          fonts[font.selector] = font;
+          fonts[selector] = font;
+          legacyFonts[legacyFontSelector] = font;
         }
       } else if (duplicateInfo) {
         log3.warn('Duplicate font found for:', font, 'with existing font:', duplicateInfo.existingFont,);
         const existingFont = duplicateInfo.existingFont;
-        const newIsWoff2 = ((_c = font.file) == null ? void 0 : _c.endsWith('.woff2',)) ?? false;
-        const existingIsWoff2 = ((_d = existingFont.file) == null ? void 0 : _d.endsWith('.woff2',)) ?? false;
+        const newIsWoff2 = ((_b = font.file) == null ? void 0 : _b.endsWith('.woff2',)) ?? false;
+        const existingIsWoff2 = ((_c = existingFont.file) == null ? void 0 : _c.endsWith('.woff2',)) ?? false;
         if (newIsWoff2 && !existingIsWoff2) {
           fontFamily.fonts[duplicateInfo.index] = font;
-          fonts[font.selector] = font;
+          fonts[selector] = font;
+          legacyFonts[legacyFontSelector] = font;
         }
       } else {
         fontFamily.fonts.push(font,);
-        fonts[font.selector] = font;
+        fonts[selector] = font;
+        legacyFonts[legacyFontSelector] = font;
       }
       fontFamily.owner = ownerType;
       this.assetsByFamily.set(family, asset,);
@@ -46604,10 +46803,34 @@ var CustomFontSource = class _CustomFontSource {
         updateFontRelationships(fontFamily,);
       }
     }
+    for (const selector in fonts) {
+      if (!fonts[selector]) continue;
+      this.bySelector.set(selector, fonts[selector],);
+    }
+    for (const selector in legacyFonts) {
+      if (!legacyFonts[selector]) continue;
+      this.bySelector.set(selector, legacyFonts[selector],);
+    }
     return Object.values(fonts,);
   }
   static createSelector(family, variant,) {
-    return `${customFontSelectorPrefix}${family}${variant ? ` ${variant}` : ''}`;
+    return `${customFontSelectorPrefixV2}${family}${variant ? ` ${variant}` : ''}`;
+  }
+  static createLegacySelector(fontName,) {
+    return `${customFontSelectorLegacyPrefix}${fontName}`;
+  }
+  static cssFontFamilyFromSelector(selector,) {
+    assert(isCustomFontSelector(selector,), 'Selector must be a custom font selector',);
+    if (isCustomFontSelectorLegacy(selector,)) {
+      return selector.slice(customFontSelectorLegacyPrefix.length,);
+    }
+    return selector.slice(customFontSelectorPrefixV2.length,);
+  }
+  static legacyCSSFontFamilyForSelector(selector, font,) {
+    if (font.family.source !== 'custom') return;
+    if (!isCustomFontSelectorLegacy(selector,)) return;
+    if (selector !== font.legacyFontSelector) return;
+    return _CustomFontSource.cssFontFamilyFromSelector(font.legacyFontSelector,);
   }
   isValidCustomFontAsset(asset,) {
     var _a;
@@ -46656,27 +46879,8 @@ var CustomFontSource = class _CustomFontSource {
     this.byFamilyName.set(fontFamily.name, fontFamily,);
   }
   getFontBySelector(selector,) {
-    if (!selector.startsWith(customFontSelectorPrefix,)) return void 0;
-    const remainingSelector = selector.slice(customFontSelectorPrefix.length,);
-    if (!remainingSelector) return void 0;
-    const matchingFonts = [];
-    for (const [familyName, fontFamily,] of this.byFamilyName) {
-      if (remainingSelector.startsWith(familyName,)) {
-        const exactMatches = fontFamily.fonts.filter((font) => font.selector === selector);
-        matchingFonts.push(...exactMatches,);
-      }
-    }
-    if (matchingFonts.length > 0) {
-      if (matchingFonts.length > 1) {
-        const woff2Font = matchingFonts.find((font) => {
-          var _a;
-          return (_a = font.file) == null ? void 0 : _a.endsWith('.woff2',);
-        },);
-        if (woff2Font) return woff2Font;
-      }
-      return matchingFonts[0];
-    }
-    return void 0;
+    if (!isCustomFontSelector(selector,)) return void 0;
+    return this.bySelector.get(selector,);
   }
   getFontFamilyByName(family,) {
     const foundFontFamily = this.byFamilyName.get(family,);
@@ -46893,6 +47097,7 @@ var FontshareSource = class _FontshareSource {
           category: mapToKnownCategory(fontshareFont.category,),
           hasOpenTypeFeatures,
           variationAxes: fontVariant.isVariable ? variationAxes : void 0,
+          cssFamilyName: createCSSFamilyName(fontFamily.name, fontVariant.isVariable,),
         };
         fontFamily.fonts.push(font,);
         fonts.push(font,);
@@ -46963,7 +47168,7 @@ var FramerFontSource = class _FramerFontSource {
     const weightName = weightAndStyleInfo.replace('Italic', '',);
     const weight = weightName && weightNameToNumber2[weightName] || 400;
     return {
-      family,
+      cssFamilyName: family,
       style: style2,
       weight,
       source: 'framer',
@@ -46980,10 +47185,10 @@ var FramerFontSource = class _FramerFontSource {
     const fonts = [];
     framerFonts.forEach((framerFont) => {
       const {
-        familyName,
+        uiFamilyName: familyName,
         ...rest
       } = framerFont;
-      const key7 = _FramerFontSource.createMetadataSelector(framerFont.familyName,);
+      const key7 = _FramerFontSource.createMetadataSelector(framerFont.uiFamilyName,);
       const variationAxes = variationAxesData == null ? void 0 : variationAxesData[key7];
       let fontFamily = this.getFontFamilyByName(familyName,);
       if (!fontFamily) {
@@ -47147,6 +47352,7 @@ var GoogleFontSource = class _GoogleFontSource {
           file: (_a = variant.file) == null ? void 0 : _a.replace('http://', 'https://',),
           variationAxes: variant.isVariable ? variationAxes : void 0,
           hasOpenTypeFeatures,
+          cssFamilyName: createCSSFamilyName(fontFamily.name, variant.isVariable,),
         };
         fontFamily.fonts.push(font,);
         fonts.push(font,);
@@ -47196,9 +47402,8 @@ async function loadFontWithRetries(data2, doc, attempt = 0,) {
     url,
     stretch,
     unicodeRange,
-    isVariableFont: isVariableFont2,
   } = data2;
-  const weight = isVariableFont2 ? data2.weight : data2.weight || 500;
+  const weight = data2.weight;
   const style2 = data2.style || 'normal';
   const requestId = `${family}-${style2}-${weight}-${url}`;
   if (!fontRequests.has(requestId,) || attempt > 0) {
@@ -47340,11 +47545,18 @@ var FontStore = class {
   }
   addFont(font,) {
     this.bySelector.set(font.selector, font,);
+    if (font.legacyFontSelector) {
+      this.bySelector.set(font.legacyFontSelector, font,);
+    }
   }
   getAvailableFonts() {
     if (!this.bySelectorValuesCache || this.bySelectorValuesCache.hash !== this.bySelector.hash) {
+      const uniqueFonts = /* @__PURE__ */ new Map();
+      for (const font of this.bySelector.values()) {
+        uniqueFonts.set(font, true,);
+      }
       this.bySelectorValuesCache = {
-        result: Array.from(this.bySelector.values(),),
+        result: Array.from(uniqueFonts.keys(),),
         hash: this.bySelector.hash,
       };
     }
@@ -47407,7 +47619,7 @@ var FontStore = class {
   }
   importCustomFonts(assets, enableFontImprovements,) {
     this.bySelector.forEach((_, key7,) => {
-      if (key7.startsWith(customFontSelectorPrefix,)) {
+      if (isCustomFontSelector(key7,)) {
         this.bySelector.delete(key7,);
       }
     },);
@@ -47432,7 +47644,7 @@ var FontStore = class {
   }
   getFontBySelector(selector,) {
     if (!selector) return void 0;
-    if (selector.startsWith(customFontSelectorPrefix,)) {
+    if (isCustomFontSelector(selector,)) {
       return this.custom.getFontBySelector(selector,);
     }
     return this.bySelector.get(selector,);
@@ -47444,11 +47656,12 @@ var FontStore = class {
   getDraftPropertiesBySelector(selector,) {
     const font = this.getFontBySelector(selector,);
     if (font) {
+      const cssFamilyName = CustomFontSource.legacyCSSFontFamilyForSelector(selector, font,) ?? font.cssFamilyName;
       return {
         style: font.style,
         weight: font.weight,
         variant: font.variant,
-        family: createFontFamilyName(font,),
+        cssFamilyName,
         source: font.family.source,
         category: font.category,
       };
@@ -47457,12 +47670,12 @@ var FontStore = class {
     if (googleLocator) {
       const fontVariant = GoogleFontSource.parseVariant(googleLocator.variant,);
       if (isSuccessfullyParsedFontVariant(fontVariant,)) {
-        const family = googleLocator.isVariable ? createVariableFontFamilyName(googleLocator.name,) : googleLocator.name;
         return {
           style: fontVariant.style,
           weight: fontVariant.weight,
           variant: googleLocator.variant,
-          family,
+          cssFamilyName: createCSSFontFamilyFromWebFontLocator(googleLocator, 'google',/* Google */
+          ),
           source: 'google',
           category: void 0,
         };
@@ -47472,12 +47685,12 @@ var FontStore = class {
     if (fontshareLocator) {
       const fontVariant = FontshareSource.parseVariant(fontshareLocator.variant,);
       if (isSuccessfullyParsedFontVariant(fontVariant,)) {
-        const family = fontshareLocator.isVariable ? createVariableFontFamilyName(fontshareLocator.name,) : fontshareLocator.name;
         return {
           style: fontVariant.style,
           weight: fontVariant.weight,
           variant: fontshareLocator.variant,
-          family,
+          cssFamilyName: createCSSFontFamilyFromWebFontLocator(fontshareLocator, 'fontshare',/* Fontshare */
+          ),
           source: 'fontshare',
           category: void 0,
         };
@@ -47487,12 +47700,12 @@ var FontStore = class {
     if (builtInFontLocator) {
       const fontVariant = BuiltInFontSource.parseVariant(builtInFontLocator.variant,);
       if (isSuccessfullyParsedFontVariant(fontVariant,)) {
-        const family = builtInFontLocator.isVariable ? createVariableFontFamilyName(builtInFontLocator.name,) : builtInFontLocator.name;
         return {
           style: fontVariant.style,
           weight: fontVariant.weight,
           variant: builtInFontLocator.variant,
-          family,
+          cssFamilyName: createCSSFontFamilyFromWebFontLocator(builtInFontLocator, 'builtIn',/* BuiltIn */
+          ),
           source: 'builtIn',
           category: void 0,
         };
@@ -47504,21 +47717,29 @@ var FontStore = class {
     }
     return null;
   }
-  isSelectorLoaded(selector,) {
-    return this.loadedSelectors.has(selector,);
+  createLoadedSelectorKey(selector, cssFontFamilyOverride,) {
+    if (!cssFontFamilyOverride) return selector;
+    return selector + '---' + cssFontFamilyOverride;
+  }
+  isSelectorLoaded(selector, cssFontFamilyOverride,) {
+    return this.loadedSelectors.has(this.createLoadedSelectorKey(selector, cssFontFamilyOverride,),);
+  }
+  didLoadSelector(selector, cssFontFamilyOverride,) {
+    this.loadedSelectors.add(this.createLoadedSelectorKey(selector, cssFontFamilyOverride,),);
   }
   /**
    * Load a single font
    */
-  async loadFont(font,) {
-    if (this.isSelectorLoaded(font.selector,)) {
+  async loadFont(font, cssFontFamilyOverride,) {
+    if (this.isSelectorLoaded(font.selector, cssFontFamilyOverride,)) {
       return 0;
     }
+    const family = cssFontFamilyOverride ?? font.cssFamilyName;
     const source = font.family.source;
     const fontIsVariable = isVariableFont(font,);
     switch (source) {
       case 'local':
-        this.loadedSelectors.add(font.selector,);
+        this.didLoadSelector(font.selector, cssFontFamilyOverride,);
         return 1;
       case 'framer':
         if (!isTest()) {
@@ -47529,14 +47750,13 @@ var FontStore = class {
             return Promise.reject(`Unable to load font: ${font.selector}`,);
           }
           await loadFont({
-            family: createFontFamilyName(font,),
+            family,
             url: font.file,
             weight: font.weight,
             style: font.style,
-            isVariableFont: fontIsVariable,
           }, document,);
         }
-        this.loadedSelectors.add(font.selector,);
+        this.didLoadSelector(font.selector, cssFontFamilyOverride,);
         return 1;
       case 'google':
       case 'fontshare':
@@ -47546,13 +47766,12 @@ var FontStore = class {
           return Promise.reject(`Unable to load font: ${font.selector}`,);
         }
         await loadFont({
-          family: createFontFamilyName(font,),
+          family,
           url: font.file,
           weight: font.weight,
           style: font.style,
-          isVariableFont: fontIsVariable,
         }, document,);
-        this.loadedSelectors.add(font.selector,);
+        this.didLoadSelector(font.selector, cssFontFamilyOverride,);
         return 1;
       default:
         assertNever(source,);
@@ -47585,7 +47804,7 @@ var FontStore = class {
         },),
       );
     }
-    const shouldImportCustomFonts = selectors.some((selector) => selector.startsWith(customFontSelectorPrefix,));
+    const shouldImportCustomFonts = selectors.some(isCustomFontSelector,);
     if (shouldImportCustomFonts) {
       importPromises.push(this.customFontsImportPromise.catch((error) => {
         warnOnce2('Failed to load custom fonts:', error,);
@@ -47594,8 +47813,14 @@ var FontStore = class {
     if (importPromises.length > 0) {
       await Promise.all(importPromises,);
     }
-    const fonts = selectors.map((s) => this.bySelector.get(s,)).filter((f) => !!f);
-    return Promise.allSettled(fonts.map((f) => this.loadFont(f,)),);
+    const loadingPromises = [];
+    for (const selector of selectors) {
+      const font = this.bySelector.get(selector,);
+      if (font) {
+        loadingPromises.push(this.loadFont(font, CustomFontSource.legacyCSSFontFamilyForSelector(selector, font,),),);
+      }
+    }
+    return Promise.allSettled(loadingPromises,);
   }
   async loadFonts(fontSelectors,) {
     const results = await this.loadFontsFromSelectors(fontSelectors,);
@@ -52066,20 +52291,20 @@ function throttle(fn, time2,) {
 function addActionControls(action, title, controls,) {
   runtime.addActionControls(action, title, controls,);
 }
-function addFonts(component, passedFonts, flags,) {
-  const fonts = convertMixedFontArrayToFontBundles(passedFonts,);
+function addFonts(component, fontsOrBundles, flags,) {
+  const bundles = upgradeFontBundlesAsNeeded(fontsOrBundles,);
   if (
     !(flags == null ? void 0 : flags.supportsExplicitInterCodegen) &&
     // Only emit an `explicitInter: false` bundle if we don’t already have one.
-    !fonts.some((font) => font.explicitInter === false)
+    !bundles.some((font) => font.explicitInter === false)
   ) {
-    fonts.push({
+    bundles.push({
       explicitInter: false,
       fonts: [],
     },);
   }
   Object.assign(component, {
-    fonts,
+    fonts: bundles,
   },);
 }
 function getFonts(component,) {
@@ -52087,14 +52312,14 @@ function getFonts(component,) {
   const fonts = component.fonts;
   return fonts ?? emptyArray();
 }
-function getFontsFromSharedStyle(fonts,) {
-  if (fonts.length === 0) {
+function getFontsFromSharedStyle(fontsOrBundles,) {
+  if (fontsOrBundles.length === 0) {
     return [{
       explicitInter: false,
       fonts: [],
     },];
   }
-  return convertMixedFontArrayToFontBundles(fonts,);
+  return upgradeFontBundlesAsNeeded(fontsOrBundles,);
 }
 function getFontsFromComponentPreset(fonts,) {
   if (fonts.length === 0) {
@@ -52103,9 +52328,9 @@ function getFontsFromComponentPreset(fonts,) {
       fonts: [],
     },];
   }
-  return convertMixedFontArrayToFontBundles(fonts,);
+  return upgradeFontBundlesAsNeeded(fonts,);
 }
-function convertMixedFontArrayToFontBundles(fonts,) {
+function upgradeFontBundlesAsNeeded(fonts,) {
   const oldFontBundle = {
     explicitInter: false,
     fonts: [],
@@ -52113,9 +52338,12 @@ function convertMixedFontArrayToFontBundles(fonts,) {
   const fontBundles = [];
   for (const fontOrBundle of fonts) {
     if (isComponentFontBundle(fontOrBundle,)) {
-      fontBundles.push(fontOrBundle,);
+      fontBundles.push({
+        explicitInter: fontOrBundle.explicitInter,
+        fonts: fontOrBundle.fonts.map(upgradeComponentFont,),
+      },);
     } else {
-      oldFontBundle.fonts.push(upgradeComponentFontV1(fontOrBundle,),);
+      oldFontBundle.fonts.push(upgradeComponentFont(fontOrBundle,),);
     }
   }
   if (oldFontBundle.fonts.length > 0) fontBundles.push(oldFontBundle,);
@@ -52125,7 +52353,20 @@ var componentFontBundleKey = 'explicitInter';
 function isComponentFontBundle(font,) {
   return componentFontBundleKey in font;
 }
-function upgradeComponentFontV1(font,) {
+function upgradeComponentFont(font,) {
+  const fontV2 = hasComponentFontV2(font,) || hasComponentFontV3(font,) ? font : upgradeToComponentFontV2(font,);
+  const fontV3 = hasComponentFontV3(fontV2,) ? fontV2 : upgradeToComponentFontV3(fontV2,);
+  return fontV3;
+}
+function hasComponentFontV2(font,) {
+  const key7 = 'source';
+  return key7 in font;
+}
+function hasComponentFontV3(font,) {
+  const key7 = 'cssFamilyName';
+  return key7 in font;
+}
+function upgradeToComponentFontV2(font,) {
   let source;
   if (font.url.startsWith('https://fonts.gstatic.com/s/',)) {
     source = 'google';
@@ -52137,6 +52378,22 @@ function upgradeComponentFontV1(font,) {
   return {
     ...font,
     source,
+  };
+}
+function upgradeToComponentFontV3(font,) {
+  const {
+    family,
+    ...rest
+  } = font;
+  const cssFamilyName =
+    // `font.source !== FontSourceNames.Custom` mimics the pre-ComponentFontV3 Vekter logic.
+    // Without this, CSS font families used in `style={{ fontFamily: ... }}` won’t match
+    // `ComponentFont.cssFontFamily`s
+    font.variationAxes && font.source !== 'custom' ? `${family} ${FRAMER_VARIABLE_FONT_SUFFIX}` : family;
+  return {
+    ...rest,
+    uiFamilyName: family,
+    cssFamilyName,
   };
 }
 function withPerformanceMarks(prefix2, callback,) {
