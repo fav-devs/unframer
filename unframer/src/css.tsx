@@ -37,10 +37,16 @@ export function logFontsUsage(fontsBundles: ComponentFontBundle[]) {
     for (let fontDefBundle of fontsBundles) {
         let filename = fontDefBundle.fileName
         for (let font of fontDefBundle.fonts) {
-            if (familyToFilenames.has(font.family)) {
-                familyToFilenames.get(font.family)!.add(filename!)
+            // Support both ComponentFontV1 (family) and V3 (cssFamilyName)
+            let fontFamily = (font as any).cssFamilyName || font.family
+            // Add "Variable" suffix for variable fonts (fonts with variationAxes)
+            if ((font as any).variationAxes && (font as any).source !== 'custom' && !fontFamily.endsWith(' Variable')) {
+                fontFamily = `${fontFamily} Variable`
+            }
+            if (familyToFilenames.has(fontFamily)) {
+                familyToFilenames.get(fontFamily)!.add(filename!)
             } else {
-                familyToFilenames.set(font.family, new Set([filename!]))
+                familyToFilenames.set(fontFamily, new Set([filename!]))
             }
         }
     }
@@ -89,11 +95,17 @@ export function getFontsStyles(_fontsDefs: ComponentFontBundle[]) {
         str +=
             '\n' +
             fonts
-                .map((x) => {
+                .map((x: any) => {
+                    // Support both ComponentFontV1 (family) and V3 (cssFamilyName)
+                    let fontFamily = x.cssFamilyName || x.family
+                    // Add "Variable" suffix for variable fonts (fonts with variationAxes)
+                    if (x.variationAxes && x.source !== 'custom' && !fontFamily.endsWith(' Variable')) {
+                        fontFamily = `${fontFamily} Variable`
+                    }
                     let str = ''
                     str += dedent`
                     @font-face {
-                        font-family: '${x.family}';
+                        font-family: '${fontFamily}';
                         src: url('${x.url}');\n
                     `
                     if (x.style) {
@@ -103,7 +115,7 @@ export function getFontsStyles(_fontsDefs: ComponentFontBundle[]) {
                         str += `    font-weight: ${x.weight};\n`
                     }
                     if (x.unicodeRange) {
-                        str += `    unicodeRange: ${x.unicodeRange};\n`
+                        str += `    unicode-range: ${x.unicodeRange};\n`
                     }
                     str += `}\n`
                     return str
